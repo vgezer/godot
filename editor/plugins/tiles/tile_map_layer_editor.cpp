@@ -2148,6 +2148,11 @@ void TileMapLayerEditorTilesPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_get_tile_map_selection"), &TileMapLayerEditorTilesPlugin::_get_tile_map_selection);
 }
 
+void TileMapLayerEditor::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_show_layer_selector", "enabled"), &TileMapLayerEditor::set_show_layer_selector);
+	ClassDB::bind_method(D_METHOD("is_layer_selector_enabled"), &TileMapLayerEditor::is_layer_selector_enabled);
+}
+
 void TileMapLayerEditorTilesPlugin::edit(ObjectID p_tile_map_layer_id) {
 	_stop_dragging(); // Avoids staying in a wrong drag state.
 
@@ -3737,39 +3742,86 @@ void TileMapLayerEditor::_select_all_layers_pressed() {
 void TileMapLayerEditor::_layers_selection_item_selected(int p_index) {
 	TileMapLayer *edited_layer = _get_edited_layer();
 	ERR_FAIL_NULL(edited_layer);
+	EditorNode *en = EditorNode::get_singleton();
+	
+	Node *edited_scene_root = en->get_edited_scene();
+	ERR_FAIL_NULL(edited_scene_root);
 
-	TileMap *tile_map = Object::cast_to<TileMap>(edited_layer->get_parent());
-	ERR_FAIL_NULL(tile_map);
+	print_line("selected index");
+	print_line(p_index);
 
-	TileMapLayer *new_edited = Object::cast_to<TileMapLayer>(tile_map->get_child(p_index));
-	edit(new_edited);
+	//TileMap *tile_map = Object::cast_to<TileMap>(edited_layer->get_parent());
+	//	ERR_FAIL_NULL(tile_map);
+
+	//TileMapLayer *new_edited = Object::cast_to<TileMapLayer>(tile_map->get_child(p_index));
+	//edit(tile_map_layers_in_scene_cache[p_index]);
+	en->edit_node(tile_map_layers_in_scene_cache[p_index]);
+	en->get_editor_selection()->clear(); // bu var mi 
+	en->get_editor_selection()->add_node(tile_map_layers_in_scene_cache[p_index]);
+	print_line("scene layer");
+	print_line(tile_map_layers_in_scene_cache[p_index]);
+	edit(tile_map_layers_in_scene_cache[p_index]);
+	print_line("edit seyini kapatik");
 }
 
 void TileMapLayerEditor::_update_layers_selector() {
 	const TileMapLayer *edited_layer = _get_edited_layer();
-
-	// Update the selector.
+	print_line("edited layer");
+	print_line(edited_layer);
+	ERR_FAIL_NULL(edited_layer);
+	
+	EditorNode *en = EditorNode::get_singleton();
+	Node *edited_scene_root = en->get_edited_scene();
+	ERR_FAIL_NULL(edited_scene_root);
+	
 	layers_selection_button->clear();
 	layers_selection_button->hide();
+	// Update the selector.
 	select_all_layers->show();
 	select_next_layer->set_disabled(false);
 	select_previous_layer->set_disabled(false);
-	advanced_menu_button->get_popup()->set_item_disabled(ADVANCED_MENU_EXTRACT_TILE_MAP_LAYERS, true);
+//	advanced_menu_button->get_popup()->set_item_disabled(ADVANCED_MENU_EXTRACT_TILE_MAP_LAYERS, true);
 	if (edited_layer) {
 		TileMap *tile_map = Object::cast_to<TileMap>(edited_layer->get_parent());
+		
+		for (TileMapLayer *layer : tile_map_layers_in_scene_cache) {
+			//multi_node_edit->add_node(edited_scene_root->get_path_to(layer));
+			layers_selection_button->add_item(layer->get_name());
+			layers_selection_button->set_item_metadata(layer->get_index_in_tile_map(), layer->get_name());
+			print_line("get indexes");
+			print_line(edited_layer->get_index_in_tile_map());
+			print_line(layer->get_index_in_tile_map());
+			
+		print_line("edited layer");
+			print_line(layer);
+			print_line(edited_layer);
+			
+			if (edited_layer == layer) {
+				layers_selection_button->select(layer->get_index_in_tile_map());
+				print_line("i am selecting the chosen layer");
+			}
+		}
+		//if (show_layers_selector) {
+			layers_selection_button->show();
+		//} else {
+			//layers_selection_button->hide();
+		//}
+			//print_line("layer count");
+			//print_line(tile_map->get_layers_count());
 		if (tile_map && edited_layer->get_index_in_tile_map() >= 0) {
 			// Build the list of layers.
-			for (int i = 0; i < tile_map->get_layers_count(); i++) {
-				const TileMapLayer *layer = Object::cast_to<TileMapLayer>(tile_map->get_child(i));
-				if (layer) {
-					int index = layers_selection_button->get_item_count();
-					layers_selection_button->add_item(layer->get_name());
-					layers_selection_button->set_item_metadata(index, layer->get_name());
-					if (edited_layer == layer) {
-						layers_selection_button->select(index);
-					}
-				}
-			}
+			// print_line(tile_map->get_layers_count());
+			// for (int i = 0; i < tile_map->get_layers_count(); i++) {
+				// const TileMapLayer *layer = Object::cast_to<TileMapLayer>(tile_map->get_child(i));
+				// if (layer) {
+					// int index = layers_selection_button->get_item_count();
+					// layers_selection_button->add_item(layer->get_name());
+					// layers_selection_button->set_item_metadata(index, layer->get_name());
+					// if (edited_layer == layer) {
+						// layers_selection_button->select(index);
+					// }
+				// }
+			// }
 
 			// Disable selector if there's no layer to select.
 			layers_selection_button->set_disabled(false);
@@ -3783,14 +3835,24 @@ void TileMapLayerEditor::_update_layers_selector() {
 				select_next_layer->set_disabled(true);
 				select_previous_layer->set_disabled(true);
 			}
-			layers_selection_button->show();
 			select_all_layers->hide();
+
+			// update with new chosen tile
+			// if (edited_layer->get_index_in_tile_map() < 0) {
+				// // Only if not part of a TileMap.
+				// en->edit_node(new_selected_layer);
+				// en->get_editor_selection()->clear();
+				// en->get_editor_selection()->add_node(new_selected_layer);
+			// } else {
+				// edit(new_selected_layer);
+			// }
 
 			// Enable the "extract as TileMapLayer" option only if we are editing a TleMap.
 			advanced_menu_button->get_popup()->set_item_disabled(ADVANCED_MENU_EXTRACT_TILE_MAP_LAYERS, false);
 		}
 	} else {
 		select_all_layers->hide();
+		layers_selection_button->hide();
 		select_next_layer->set_disabled(true);
 		select_previous_layer->set_disabled(true);
 	}
@@ -4122,10 +4184,13 @@ void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next) {
 
 	if (edited_layer->get_index_in_tile_map() < 0) {
 		// Only if not part of a TileMap.
+		print_line("not part of tilemap");
 		en->edit_node(new_selected_layer);
 		en->get_editor_selection()->clear();
 		en->get_editor_selection()->add_node(new_selected_layer);
 	} else {
+		print_line("part of tilemap");
+		print_line(new_selected_layer);
 		edit(new_selected_layer);
 	}
 }
@@ -4387,7 +4452,13 @@ void TileMapLayerEditor::edit(Object *p_edited) {
 
 void TileMapLayerEditor::set_show_layer_selector(bool p_show_layer_selector) {
 	show_layers_selector = p_show_layer_selector;
+	print_line("enabled?");
+	print_line(show_layers_selector);
 	_update_layers_selector();
+}
+
+bool TileMapLayerEditor::is_layer_selector_enabled() {
+	return show_layers_selector;
 }
 
 TileMapLayerEditor::TileMapLayerEditor() {

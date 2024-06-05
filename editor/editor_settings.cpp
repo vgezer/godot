@@ -770,8 +770,9 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("editors/panning/2d_editor_pan_speed", 20);
 
 	// Tiles editor
-	_initial_set("editors/tiles_editor/display_grid", true);
+	_initial_set("editors/tiles_editor/show_layer_selector", true);
 	_initial_set("editors/tiles_editor/highlight_selected_layer", true);
+	_initial_set("editors/tiles_editor/display_grid", true);
 	_initial_set("editors/tiles_editor/grid_color", Color(1.0, 0.5, 0.2, 0.5));
 
 	// Polygon editor

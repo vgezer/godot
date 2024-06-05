@@ -409,6 +409,7 @@ private:
 protected:
 	void _notification(int p_what);
 	void _draw_shape(Control *p_control, Rect2 p_region, TileSet::TileShape p_shape, TileSet::TileOffsetAxis p_offset_axis, Color p_color);
+	static void _bind_methods();
 
 public:
 	bool forward_canvas_gui_input(const Ref<InputEvent> &p_event);
@@ -416,6 +417,7 @@ public:
 
 	void edit(Object *p_tile_map_layer);
 	void set_show_layer_selector(bool p_show_layer_selector);
+	bool is_layer_selector_enabled();
 
 	TileMapLayerEditor();
 	~TileMapLayerEditor();
